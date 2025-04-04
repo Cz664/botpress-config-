@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑客风格聊天窗口</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+        }
+        
+        /* 聊天窗口容器 */
+        .chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 380px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #00FF41;
+            background-color: #0D0D0D;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+            overflow: hidden;
+            z-index: 1000;
+        }
+        
+        /* 标题栏 */
+        .chat-header {
+            background-color: #0D0D0D;
+            color: #00FF41;
+            padding: 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #00FF41;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-title {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .chat-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        /* 消息区域 */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            position: relative;
+        }
+        
+        /* 扫描线效果 */
+        .chat-messages::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* 噪点效果 */
+        .chat-messages::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/png;base64,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');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        /* 消息样式 */
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            max-width: 80%;
+            position: relative;
+            z-index: 3;
+        }
+        
+        .bot-message {
+            background-color: #0D0D0D;
+            color: #00FF41;
+            border-left: 2px solid #00FF41;
+            align-self: flex-start;
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.4);
+        }
+        
+        .bot-message::before {
+            content: "$ ";
+            opacity: 0.8;
+        }
+        
+        .user-message {
+            background-color: #1A1A1A;
+            color: #00FF41;
+            border-left: 2px solid #00FF41;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .user-message::before {
+            content: "> ";
+            opacity: 0.8;
+        }
+        
+        /* 输入区域 */
+        .chat-input-container {
+            padding: 15px;
+            border-top: 1px solid #00FF41;
+            background-color: #0D0D0D;
+            display: flex;
+        }
+        
+        .chat-input {
+            flex: 1;
+            background-color: #1A1A1A;
+            border: 1px solid #00FF41;
+            color: #00FF41;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            outline: none;
+        }
+        
+        .chat-input::placeholder {
+            color: rgba(0, 255, 65, 0.5);
+        }
+        
+        .send-button {
+            background-color: transparent;
+            border: 1px solid #00FF41;
+            color: #00FF41;
+            margin-left: 10px;
+            cursor: pointer;
+            padding: 0 15px;
+            transition: background-color 0.3s;
+        }
+        
+        .send-button:hover {
+            background-color: rgba(0, 255, 65, 0.1);
+        }
+        
+        /* 打字机效果 */
+        .typing {
+            display: inline-block;
+            overflow: hidden;
+            animation: typing 2s steps(40, end);
+            white-space: nowrap;
+        }
+        
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        
+        /* 闪烁光标 */
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background-color: #00FF41;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .chat-container {
+                width: 100%;
+                height: 100%;
+                right: 0;
+                bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="chat-title">终端连接已建立</div>
+            <div class="chat-subtitle">系统等待指令输入...</div>
+        </div>
+        
+        <div class="chat-messages" id="messageArea">
+            <!-- 消息将在这里动态添加 -->
+            <div class="message bot-message typing">
+                正在建立安全连接...
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="userInput" placeholder="输入命令..." autocomplete="off">
+            <span class="cursor"></span>
+            <button class="send-button" id="sendButton">发送</button>
+        </div>
+    </div>
+
+    <script>
+        // 模拟终端启动效果
+        const bootSequence = [
+            "正在建立安全连接...",
+            "验证身份中...",
+            "访问权限已授予",
+            "终端就绪"
+        ];
+        
+        const messageArea = document.getElementById('messageArea');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        
+        // 清空初始消息
+        setTimeout(() => {
+            messageArea.innerHTML = '';
+            // 显示启动序列
+            showBootSequence(0);
+        }, 1000);
+        
+        // 显示启动序列
+        function showBootSequence(index) {
+            if (index < bootSequence.length) {
+                const msgElement = document.createElement('div');
+                msgElement.className = 'message bot-message';
+                msgElement.textContent = bootSequence[index];
+                messageArea.appendChild(msgElement);
+                messageArea.scrollTop = messageArea.scrollHeight;
+                
+                // 添加打字机效果
+                msgElement.classList.add('typing');
+                
+                // 延迟显示下一条消息
+                setTimeout(() => {
+                    showBootSequence(index + 1);
+                }, 1000);
+            }
+        }
+        
+        // 发送消息功能
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message) {
+                // 添加用户消息
+                addMessage(message, 'user-message');
+                
+                // 清空输入
+                userInput.value = '';
+                
+                // 模拟机器人回复
+                setTimeout(() => {
+                    // 这里应该连接到您的后端API，获取实际回复
+                    // 现在只是简单回显用户消息
+                    const botReply = getBotReply(message);
+                    addMessage(botReply, 'bot-message');
+                }, 1000);
+            }
+        }
+        
+        // 添加消息到对话区域
+        function addMessage(text, className) {
+            const msgElement = document.createElement('div');
+            msgElement.className = `message ${className}`;
+            msgElement.textContent = text;
+            messageArea.appendChild(msgElement);
+            
+            // 自动滚动到底部
+            messageArea.scrollTop = messageArea.scrollHeight;
+            
+            // 如果是机器人消息，添加打字机效果
+            if (className === 'bot-message') {
+                msgElement.classList.add('typing');
+            }
+        }
+        
+        // 简单的机器人回复逻辑（应替换为实际API调用）
+        function getBotReply(message) {
+            // 简单的关键词响应
+            if (message.toLowerCase().includes('你好') || message.toLowerCase().includes('hello')) {
+                return '你好，我是系统助手。如何为您提供帮助？';
+            } else if (message.toLowerCase().includes('帮助') || message.toLowerCase().includes('help')) {
+                return '可用命令: status, info, connect, disconnect';
+            } else if (message.toLowerCase().includes('status')) {
+                return '系统状态: 正常运行中 | CPU: 32% | 内存: 45% | 网络: 稳定';
+            } else {
+                return `已接收命令: "${message}"。处理中...`;
+            }
+        }
+        
+        // 事件监听
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // 焦点到输入框
+        setTimeout(() => {
+            userInput.focus();
+        }, 4500);
+    </script>
+</body>
+</html>
